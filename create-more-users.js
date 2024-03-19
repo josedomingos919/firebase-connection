@@ -8,43 +8,35 @@ import {
   remove,
   update,
   push,
-  getDatabase,
 } from "firebase/database";
 import { dataBase } from "./src/firebaseConnection";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  Button,
-  Alert,
-  FlatList,
-  ActivityIndicator,
-} from "react-native";
-import { ListUser } from "./src/ListUser";
+import { StyleSheet, Text, View, TextInput, Button, Alert } from "react-native";
 
 export default function App() {
   const [name, setName] = useState("");
   const [idade, setIdade] = useState("");
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    onValue(ref(dataBase, "usuarios"), (snapshot) => {
-      setUsuarios([]);
+    const starCountRef = ref(dataBase, "usuarios/1");
 
-      snapshot.forEach((item) => {
-        let data = {
-          key: item.key,
-          nome: item.val().nome,
-          idade: item.val().idade,
-        };
+    //Real time
+    // onValue(starCountRef, (snapshot) => {
+    //   setName(snapshot.val().Nome);
+    //   setIdade(snapshot.val().Idade);
+    // });
 
-        setUsuarios((prevState) => [...prevState, data].reverse());
-      });
-
-      setLoading(false);
-    });
+    // Usar se for pegar o dado uma só vez
+    // get(child(ref(dataBase), "nome"))
+    //   .then((snapshot) => {
+    //     if (snapshot.exists()) {
+    //       setName(snapshot.val());
+    //     } else {
+    //       console.log("Não encontrado!");
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.log({ error });
+    //   });
   }, []);
 
   //insert
@@ -102,16 +94,6 @@ export default function App() {
       />
 
       <Button title="Novo Usuario" onPress={onCreate} />
-
-      {loading ? (
-        <ActivityIndicator color="#121212" size={45} />
-      ) : (
-        <FlatList
-          keyExtractor={(item) => item.key}
-          data={usuarios}
-          renderItem={({ item }) => <ListUser data={item} />}
-        />
-      )}
     </View>
   );
 }
