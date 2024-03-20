@@ -10,7 +10,8 @@ import {
   push,
   getDatabase,
 } from "firebase/database";
-import { dataBase } from "./src/firebaseConnection";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { app, dataBase } from "./src/firebaseConnection";
 import {
   StyleSheet,
   Text,
@@ -21,97 +22,56 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { ListUser } from "./src/ListUser";
 
 export default function App() {
-  const [name, setName] = useState("");
-  const [idade, setIdade] = useState("");
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    onValue(ref(dataBase, "usuarios"), (snapshot) => {
-      setUsuarios([]);
-
-      snapshot.forEach((item) => {
-        let data = {
-          key: item.key,
-          nome: item.val().nome,
-          idade: item.val().idade,
-        };
-
-        setUsuarios((prevState) => [...prevState, data].reverse());
-      });
-
-      setLoading(false);
-    });
-  }, []);
-
-  //insert
-  useEffect(() => {
-    // Criar um nó
-    // set(ref(dataBase, "usuarios"), "Junior");
-    //
-    //
-    // Remover um nó
-    // remove(ref(dataBase, "usuarios"));
-    //
-    //
-    // criar um registro dentro do no (onde 3 é o novo id)
-    // set(ref(dataBase, "usuarios/3"), {
-    //   idade: 23,
-    //   nome: "Viuva",
-    //   cargo: "Dev",
-    // });
-    //
-    //
-    // editando no
-    // update(ref(dataBase, "usuarios/3"), {
-    //   nome: "Helena",
-    // });
-  }, []);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   async function onCreate() {
-    if (name && idade) {
-      const key = push(ref(dataBase)).key;
+    setIsLoading(true);
+    await createUserWithEmailAndPassword(getAuth(app), email, password)
+      .then((response) => {
+        alert("Usuario criado:  " + response.user.email);
+      })
+      .catch((error) => {
+        console.log(error);
 
-      await set(ref(dataBase, `usuarios/${key}`), {
-        nome: name,
-        idade: idade,
+        if (error.code == "auth/weak-password") {
+          alert("Sua senha deve ter pelomenos 6 caracteres");
+        } else if (error.code == "auth/invalid-email") {
+          alert("O email é inválido");
+        } else if (error.code == "auth/network-request-failed") {
+          alert("Falha de internet");
+        } else {
+          alert("Algo deu errado");
+        }
       });
 
-      setName("");
-      setIdade("");
-      alert("Cadastrado");
-    } else {
-      alert("Erro");
-    }
+    setEmail("");
+    setPassword("");
+    setIsLoading(false);
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Nome:</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} />
-
-      <Text style={styles.text}>Idade:</Text>
+      <Text style={styles.text}>E-mail:</Text>
       <TextInput
-        keyboardType="numeric"
+        keyboardType="email-address"
+        editable={!isLoading}
         style={styles.input}
-        value={idade}
-        onChangeText={setIdade}
+        value={email}
+        onChangeText={setEmail}
       />
-
-      <Button title="Novo Usuario" onPress={onCreate} />
-
-      {loading ? (
-        <ActivityIndicator color="#121212" size={45} />
-      ) : (
-        <FlatList
-          keyExtractor={(item) => item.key}
-          data={usuarios}
-          renderItem={({ item }) => <ListUser data={item} />}
-        />
-      )}
+      <Text style={styles.text}>Senha:</Text>
+      <TextInput
+        secureTextEntry={true}
+        editable={!isLoading}
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Button disabled={isLoading} title="Cadastrar" onPress={onCreate} />
     </View>
   );
 }
